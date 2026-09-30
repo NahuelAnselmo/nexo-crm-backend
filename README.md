@@ -15,7 +15,8 @@ mensajes y notas.
 
 ## Modelo inicial
 
-El esquema separa los datos por organización y contempla usuarios con roles,
+Las sesiones usan cookies HTTP-only y cada consulta toma la organización desde la
+membresía autenticada. El esquema separa los datos por organización y contempla usuarios con roles,
 contactos, etiquetas, etapas de pipeline, oportunidades y actividades. Las
 relaciones e índices preparan búsquedas por responsable, estado, etapa y fecha
 sin mezclar información entre clientes del producto.
@@ -31,8 +32,11 @@ npm run db:seed
 npm run dev
 ```
 
-La API queda disponible en `http://localhost:4100/api/v1` y expone inicialmente
-`GET /health`.
+La API queda disponible en `http://localhost:4100/api/v1`. Sus primeros contratos son:
+
+- `GET /health`: estado del servicio.
+- `POST /auth/login`, `GET /auth/me` y `POST /auth/logout`: sesión segura.
+- `GET /dashboard`: métricas, pipeline, actividades y contactos de la organización autenticada.
 
 El seed es reproducible y crea **Nexo Agency**, cuatro etapas comerciales, diez
 contactos, oportunidades, etiquetas, actividades y un usuario propietario:
@@ -56,8 +60,6 @@ npm audit
 
 ## Próximas etapas
 
-1. Autenticación y selección segura de organización.
-2. Datos ficticios reproducibles para la demo.
-3. CRUD de contactos y oportunidades con permisos por rol.
-4. Pipeline comercial, actividades y métricas.
-5. Integración con el frontend y despliegue público.
+1. CRUD de contactos y oportunidades con permisos por rol.
+2. Mutaciones del pipeline y actividades con permisos por rol.
+3. Integración con el frontend y despliegue público.
