@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MembershipRole {
+  OWNER
+  MANAGER
+  SALES
+}
+
+enum OpportunityStatus {
+  OPEN
+  WON
+  LOST
+}
+
+enum ActivityType {
+  NOTE
+  CALL
+  EMAIL
+  MEETING
+  TASK
+  WHATSAPP
+}
+
+enum ActivityStatus {
+  PLANNED
+  COMPLETED
+  CANCELLED
+}
+
+model Organization {
+  id             String          @id @default(cuid())
+  name           String
+  slug           String          @unique
+  timezone       String          @default("America/Argentina/Buenos_Aires")
+  currency       String          @default("ARS")
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(3)
+  memberships    Membership[]
+  pipelineStages PipelineStage[]
+  contacts       Contact[]
+  tags           Tag[]
+  opportunities  Opportunity[]
+  activities     Activity[]
+}
+
+model User {
+  id                    String        @id @default(cuid())
+  name                  String
+  email                 String        @unique
+  passwordHash          String
+  createdAt             DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt             DateTime      @updatedAt @db.Timestamptz(3)
+  memberships           Membership[]
+  assignedContacts      Contact[]     @relation("ContactAssignee")
+  assignedOpportunities Opportunity[] @relation("OpportunityAssignee")
+  activities            Activity[]    @relation("ActivityOwner")
+}
+
+model Membership {
+  id             String         @id @default(cuid())
+  role           MembershipRole @default(SALES)
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+  organizationId String
+  userId         String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, userId])
+  @@index([userId])
+}
+
+model PipelineStage {
+  id             String        @id @default(cuid())
+  name           String
+  color          String
+  position       Int
+  createdAt      DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @db.Timestamptz(3)
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  opportunities  Opportunity[]
+
+  @@unique([organizationId, position])
+  @@index([organizationId])
+}
+
+model Contact {
+  id             String          @id @default(cuid())
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String?
+  company        String?
+  jobTitle       String?
+  source         String?
+  notes          String?
+  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime        @updatedAt @db.Timestamptz(3)
+  organizationId String
+  assignedToId   String?
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignedTo     User?           @relation("ContactAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  opportunities  Opportunity[]
+  activities     Activity[]
+  tags           ContactTag[]
+
+  @@unique([organizationId, email])
+  @@index([organizationId, lastName, firstName])
+  @@index([assignedToId])
+}
+
+model Tag {
+  id             String       @id @default(cuid())
+  name           String
+  color          String
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contacts       ContactTag[]
+
+  @@unique([organizationId, name])
+}
+
+model ContactTag {
+  contactId String
+  tagId     String
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, tagId])
+  @@index([tagId])
+}
+
+model Opportunity {
+  id                   String            @id @default(cuid())
+  title                String
+  valueInCents         Int
+  status               OpportunityStatus @default(OPEN)
+  expectedCloseAt      DateTime?         @db.Timestamptz(3)
+  closedAt             DateTime?         @db.Timestamptz(3)
+  lostReason           String?
+  createdAt            DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt            DateTime          @updatedAt @db.Timestamptz(3)
+  organizationId       String
+  contactId            String
+  stageId              String
+  assignedToId         String?
+  organization         Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact              Contact           @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  stage                PipelineStage     @relation(fields: [stageId], references: [id], onDelete: Restrict)
+  assignedTo           User?             @relation("OpportunityAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  activities           Activity[]
+
+  @@index([organizationId, status])
+  @@index([stageId])
+  @@index([contactId])
+  @@index([assignedToId])
+  @@index([expectedCloseAt])
+}
+
+model Activity {
+  id             String         @id @default(cuid())
+  type           ActivityType
+  status         ActivityStatus @default(PLANNED)
+  subject        String
+  description    String?
+  dueAt          DateTime?      @db.Timestamptz(3)
+  completedAt    DateTime?      @db.Timestamptz(3)
+  createdAt      DateTime       @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime       @updatedAt @db.Timestamptz(3)
+  organizationId String
+  contactId      String?
+  opportunityId  String?
+  ownerId        String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact        Contact?       @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  opportunity    Opportunity?   @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  owner          User           @relation("ActivityOwner", fields: [ownerId], references: [id], onDelete: Restrict)
+
+  @@index([organizationId, dueAt])
+  @@index([contactId])
+  @@index([opportunityId])
+  @@index([ownerId, status])
+}
