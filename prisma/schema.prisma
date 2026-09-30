@@ -61,6 +61,19 @@ model User {
   assignedContacts      Contact[]     @relation("ContactAssignee")
   assignedOpportunities Opportunity[] @relation("OpportunityAssignee")
   activities            Activity[]    @relation("ActivityOwner")
+  sessions              Session[]
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  expiresAt DateTime @db.Timestamptz(3)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Membership {
@@ -92,7 +105,7 @@ model PipelineStage {
 }
 
 model Contact {
-  id             String          @id @default(cuid())
+  id             String        @id @default(cuid())
   firstName      String
   lastName       String
   email          String?
@@ -101,12 +114,12 @@ model Contact {
   jobTitle       String?
   source         String?
   notes          String?
-  createdAt      DateTime        @default(now()) @db.Timestamptz(3)
-  updatedAt      DateTime        @updatedAt @db.Timestamptz(3)
+  createdAt      DateTime      @default(now()) @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @db.Timestamptz(3)
   organizationId String
   assignedToId   String?
-  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  assignedTo     User?           @relation("ContactAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  assignedTo     User?         @relation("ContactAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
   opportunities  Opportunity[]
   activities     Activity[]
   tags           ContactTag[]
@@ -138,24 +151,24 @@ model ContactTag {
 }
 
 model Opportunity {
-  id                   String            @id @default(cuid())
-  title                String
-  valueInCents         Int
-  status               OpportunityStatus @default(OPEN)
-  expectedCloseAt      DateTime?         @db.Timestamptz(3)
-  closedAt             DateTime?         @db.Timestamptz(3)
-  lostReason           String?
-  createdAt            DateTime          @default(now()) @db.Timestamptz(3)
-  updatedAt            DateTime          @updatedAt @db.Timestamptz(3)
-  organizationId       String
-  contactId            String
-  stageId              String
-  assignedToId         String?
-  organization         Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
-  contact              Contact           @relation(fields: [contactId], references: [id], onDelete: Restrict)
-  stage                PipelineStage     @relation(fields: [stageId], references: [id], onDelete: Restrict)
-  assignedTo           User?             @relation("OpportunityAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
-  activities           Activity[]
+  id              String            @id @default(cuid())
+  title           String
+  valueInCents    Int
+  status          OpportunityStatus @default(OPEN)
+  expectedCloseAt DateTime?         @db.Timestamptz(3)
+  closedAt        DateTime?         @db.Timestamptz(3)
+  lostReason      String?
+  createdAt       DateTime          @default(now()) @db.Timestamptz(3)
+  updatedAt       DateTime          @updatedAt @db.Timestamptz(3)
+  organizationId  String
+  contactId       String
+  stageId         String
+  assignedToId    String?
+  organization    Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  contact         Contact           @relation(fields: [contactId], references: [id], onDelete: Restrict)
+  stage           PipelineStage     @relation(fields: [stageId], references: [id], onDelete: Restrict)
+  assignedTo      User?             @relation("OpportunityAssignee", fields: [assignedToId], references: [id], onDelete: SetNull)
+  activities      Activity[]
 
   @@index([organizationId, status])
   @@index([stageId])

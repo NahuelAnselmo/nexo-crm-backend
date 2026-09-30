@@ -26,11 +26,23 @@ sin mezclar información entre clientes del producto.
 npm install
 cp .env.example .env
 npm run prisma:generate
+npm run db:migrate -- --name init
+npm run db:seed
 npm run dev
 ```
 
 La API queda disponible en `http://localhost:4100/api/v1` y expone inicialmente
 `GET /health`.
+
+El seed es reproducible y crea **Nexo Agency**, cuatro etapas comerciales, diez
+contactos, oportunidades, etiquetas, actividades y un usuario propietario:
+
+- Email: `admin@nexocrm.demo`
+- Contraseña: `Demo1234!`
+
+Por seguridad, el seed se bloquea en producción salvo que se habilite
+explícitamente `ALLOW_DEMO_SEED=true` durante la preparación controlada de una
+demo.
 
 ## Verificación
 
